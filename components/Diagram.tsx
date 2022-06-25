@@ -4,6 +4,8 @@ import { isDependency } from "../utils/helpers"
 
 interface DiagramProps {
     epic: Task[]
+    radius: number;
+    verticalSeparation: number;
 }
 
 
@@ -14,9 +16,9 @@ function instanceOfEdge(object: any): object is Edge {
     return 'task' in object;
 }
 
-export default function Diagram({ epic }: DiagramProps): JSX.Element {
+export default function Diagram({ epic, radius, verticalSeparation }: DiagramProps): JSX.Element {
 
-    const transformedTasks: (Task | Edge)[] = transformTasksToSVG(epic)
+    const transformedTasks: (Task | Edge)[] = transformTasksToSVG(epic,verticalSeparation,radius)
 
     return (
         <>
@@ -38,29 +40,36 @@ export default function Diagram({ epic }: DiagramProps): JSX.Element {
 
 
 
-function transformTasksToSVG(epic: Task[]): (Task | Edge)[] {
+function transformTasksToSVG(epic: Task[], verticalSeparation: number, radius: number): (Task | Edge)[] {
     const tasksWithCoordinates: (Task | Edge)[] = []
 
     // find head
     const headTask = epic.find(t => t.head === true) as Task
-    updateCoordinates(headTask, epic)
+    updateCoordinates(headTask, epic, verticalSeparation, radius)
     tasksWithCoordinates.push(headTask)
     headTask.dependencies.forEach(d => tasksWithCoordinates.push(d))
     return tasksWithCoordinates
 }
 
-
-function updateCoordinates(task: Task, epic: Task[]) {
+/**
+ * Takes a task and populates it with co-ordinates for the circle itself, then populates each of its edges with an origin and destination
+ * @param task the task that is receiving co-ordinates
+ * @param epic the collection of tasks. This is required so that 
+ * @param verticalSeparation 
+ * @param radius 
+ */
+function updateCoordinates(task: Task, epic: Task[], verticalSeparation: number, radius:number) {
     // It is a necessary requirement that epic is organised from head to last child for this to work.
+    // This is because if it isn't a head node, it will use the destination co-ordinates of the parent edge as center point.
+    // It is assumed that these edges will already have destinations, which means this function should be called on the parents of this task before this task is processed.
     const headCoords = { x: 500, y: 80 }
-    const verticalSeparation = defaultVerticalSeparation
-    const taskRadius = defaultRadius
 
-    // give the node centre coords. headcoords if head, or the dest coords of the edge connecting to it
+    // give the task node center co-ords. give default head co-ords if head. otherwise, give the dest coords of the edge connecting to it
     if (task.head) {
         task.centerx = headCoords.x
         task.centery = headCoords.y
     } else {
+        // find the first edge that conects to the tasks and use its dest co-rords as center co-ords
         const parentEdges = epic.filter(t => isDependency(t, task)).map(p => p.dependencies.find(e => e.task.id === task.id))
         if (parentEdges) {
             task.centerx = parentEdges[0]?.destx
@@ -70,7 +79,7 @@ function updateCoordinates(task: Task, epic: Task[]) {
 
     // give each edge an origin at the centre, then destinations.
     const numberOfEdges = task.dependencies.length
-    const angleRange = getAngleRange(verticalSeparation,numberOfEdges,taskRadius)
+    const angleRange = getAngleRange(verticalSeparation,numberOfEdges,radius)
     const edgeAngles = getEdgeAngles(numberOfEdges,angleRange)
 
 
@@ -87,14 +96,14 @@ function updateCoordinates(task: Task, epic: Task[]) {
         e.length = edgeLength
 
     })
-
-
-
-
-
 }
 
-
+/**
+ * Divides the angle range proportionately such that each edge has an angle (wrt to horizon) from which it travels to the next node
+ * @param numberOfEdges 
+ * @param angleRange 
+ * @returns 
+ */
 function getEdgeAngles(numberOfEdges: number, angleRange: number): number[] {
     const edgeAngles: number[] = []
     const startingAngle  = (180 - angleRange) / 2
@@ -111,12 +120,26 @@ function getEdgeAngles(numberOfEdges: number, angleRange: number): number[] {
 }
 
 
+/**
+ * Calculates the length of the edge so that it meets the vertical separation
+ * @param edgeAngle 
+ * @param verticlaDistance 
+ * @returns 
+ */
 function getEdgeLength(edgeAngle: number, verticlaDistance: number): number {
     const angleWithVertical = Math.abs(90 - edgeAngle)
     const edgeLength = verticlaDistance/Math.cos(angleWithVertical*(Math.PI/180))
     return Math.abs(edgeLength)
 }
 
+/**
+ * Given the angle at which the edge leaves the horizontal, and its length, the destination co-ordinates can be calculated.
+ * @param edgeAngle 
+ * @param edgeLength 
+ * @param originx 
+ * @param originy 
+ * @returns 
+ */
 function getEdgeDestination(edgeAngle: number, edgeLength: number, originx: number, originy: number) {
 
     const angleWithVertical = Math.abs(90 - edgeAngle)
@@ -128,6 +151,13 @@ function getEdgeDestination(edgeAngle: number, edgeLength: number, originx: numb
 
 }
 
+/**
+ * Uses the width of the children nodes to calculate an angle that given the vertical separation will ensure no overlap between nodes.
+ * @param verticalSeparation 
+ * @param numberOfEdges 
+ * @param r 
+ * @returns 
+ */
 function getAngleRange(verticalSeparation: number, numberOfEdges:number, r:number){
     // const baseWidth = (2*numberOfEdges - 2)*r
     const baseWidth = numberOfEdges*2*r
