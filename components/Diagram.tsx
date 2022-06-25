@@ -7,7 +7,8 @@ interface DiagramProps {
 }
 
 
-const defaultRadius = 10
+const defaultRadius = 20
+const defaultVerticalSeparation = 50
 
 function instanceOfEdge(object: any): object is Edge {
     return 'task' in object;
@@ -19,7 +20,7 @@ export default function Diagram({ epic }: DiagramProps): JSX.Element {
 
     return (
         <>
-            <svg width="100%" height="800">
+            <svg width="800" height="800">
                 {
                     transformedTasks.map((t,i) => {
                         if (instanceOfEdge(t)) {
@@ -52,7 +53,7 @@ function transformTasksToSVG(epic: Task[]): (Task | Edge)[] {
 function updateCoordinates(task: Task, epic: Task[]) {
     // It is a necessary requirement that epic is organised from head to last child for this to work.
     const headCoords = { x: 500, y: 80 }
-    const minEdgeLength = 180
+    const verticalSeparation = defaultVerticalSeparation
     const taskRadius = defaultRadius
 
     // give the node centre coords. headcoords if head, or the dest coords of the edge connecting to it
@@ -69,8 +70,8 @@ function updateCoordinates(task: Task, epic: Task[]) {
 
     // give each edge an origin at the centre, then destinations.
     const numberOfEdges = task.dependencies.length
-    const increment = 180 / (numberOfEdges + 1)
-    const edgeAngles = getEdgeAngles(numberOfEdges)
+    const angleRange = getAngleRange(verticalSeparation,numberOfEdges,taskRadius)
+    const edgeAngles = getEdgeAngles(numberOfEdges,angleRange)
 
 
     task.dependencies.forEach((e, i) => {
@@ -78,9 +79,7 @@ function updateCoordinates(task: Task, epic: Task[]) {
         e.originy = task.centery
 
         const edgeAngle = edgeAngles[i]
-        const prevEdgeLength = i === 0 ? minEdgeLength : task.dependencies[i - 1].length
-        // const edgeLength = prevEdgeLength && i > 0 ? getEdgeLength(prevEdgeLength, increment, taskRadius) : minEdgeLength
-        const edgeLength = minEdgeLength
+        const edgeLength = getEdgeLength(edgeAngle,verticalSeparation)
         const destinationCoords = getEdgeDestination(edgeAngle, edgeLength, e.originx!, e.originy!)
 
         e.destx = destinationCoords.destx
@@ -96,13 +95,15 @@ function updateCoordinates(task: Task, epic: Task[]) {
 }
 
 
-function getEdgeAngles(numberOfEdges: number): number[] {
+function getEdgeAngles(numberOfEdges: number, angleRange: number): number[] {
     const edgeAngles: number[] = []
-    const increment = 180 / (numberOfEdges + 1)
-    let currentAngle = 0
-    let multiple = 1
-    while (currentAngle < 180 - increment) {
-        currentAngle = multiple * increment
+    const startingAngle  = (180 - angleRange) / 2
+    const endAngle = (180 + angleRange) / 2
+    const increment = angleRange / (numberOfEdges + -1)
+    let currentAngle = startingAngle
+    let multiple = 0
+    while (currentAngle < endAngle) {
+        currentAngle = startingAngle + (multiple * increment)
         edgeAngles.push(currentAngle)
         multiple++
     }
@@ -110,27 +111,26 @@ function getEdgeAngles(numberOfEdges: number): number[] {
 }
 
 
-function getEdgeLength(prevEdgeLength: number, angleSpacing: number, r: number): number {
-    const radiusMargin = 2
-
-    const b = prevEdgeLength
-    const C = angleSpacing
-    const c = 2 * (r + radiusMargin)
-    const B = Math.asin((b * Math.sin(C)) / c) * (180 / Math.PI)
-    const A = 180 - (C + B)
-    const a = (c * Math.sin(A)) / Math.sin(C) // a is the length of the edge
-    return a
-
+function getEdgeLength(edgeAngle: number, verticlaDistance: number): number {
+    const angleWithVertical = Math.abs(90 - edgeAngle)
+    const edgeLength = verticlaDistance/Math.cos(angleWithVertical*(Math.PI/180))
+    return Math.abs(edgeLength)
 }
 
 function getEdgeDestination(edgeAngle: number, edgeLength: number, originx: number, originy: number) {
 
     const angleWithVertical = Math.abs(90 - edgeAngle)
-    const x = (Math.sin(angleWithVertical) * edgeLength)
-    const desty = originy + Math.abs((Math.cos(angleWithVertical) * edgeLength))
-    // const destx = originx + x
+    const x = (Math.sin(angleWithVertical*(Math.PI/180)) * edgeLength)
+    const desty = originy + Math.abs((Math.cos(angleWithVertical*(Math.PI/180)) * edgeLength))
     const destx = edgeAngle < 90 ? originx - x : originx + x
 
     return { destx: destx, desty: desty }
 
+}
+
+function getAngleRange(verticalSeparation: number, numberOfEdges:number, r:number){
+    // const baseWidth = (2*numberOfEdges - 2)*r
+    const baseWidth = numberOfEdges*2*r
+    const halfAngleRange = Math.atan((baseWidth/2)/verticalSeparation)*(180/Math.PI) 
+    return halfAngleRange*2
 }
