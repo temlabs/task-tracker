@@ -36,4 +36,5 @@ export interface Task {
     dependencies: Edge[]
     centerx?: number;
     centery?: number;
+    parents?: number[]
 }

@@ -1,4 +1,4 @@
-import { Task, Edge } from "../utils/interfaces"
+import { Task } from "../utils/interfaces"
 
 
 const invitePeople: Task = {

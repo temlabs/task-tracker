@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import Diagram from "../../components/Diagram"
 import TaskWindow from "../../components/TaskWindow"
 import hostDinnerEpic from "../../data/hostDinnerEpic"
+import cleanRoomEpic from "../../data/cleanRoomEpic"
 
 export default function Epic(): JSX.Element {
     const router = useRouter()
@@ -46,7 +47,7 @@ export default function Epic(): JSX.Element {
                     <line x1="50" y1="50" x2="50" y2="200" stroke-width="4" stroke="black" />
                     Sorry, your browser does not support inline SVG.
                 </svg> */}
-                <Diagram epic={hostDinnerEpic} verticalSeparation={90} radius={10}/>
+                <Diagram epic={cleanRoomEpic} verticalSeparation={110} radius={15}/>
             </section>
 
 
