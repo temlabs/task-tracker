@@ -16,6 +16,8 @@ function instanceOfEdge(object: any): object is Edge {
 export default function Diagram({ epic, radius, verticalSeparation }: DiagramProps): JSX.Element {
 
     const transformedTasks = transformTasksToSVG(epic, verticalSeparation, radius)
+    const transformedEdges = getEdges(transformedTasks)
+
 
     return (
         <>
@@ -24,6 +26,13 @@ export default function Diagram({ epic, radius, verticalSeparation }: DiagramPro
                     transformedTasks.map((t, i) => {
 
                         return <circle id={t.title} key={t.title} cx={t.centerx !== undefined ? t.centerx + 400 : 200} cy={t.centery} r={radius} />
+
+                    })
+                }
+                {
+                    transformedEdges.map(e => {
+
+                        return <line x1={e.originx} y1={e.originy} x2={e.destx} y2={e.desty} stroke="black"></line>
 
                     })
                 }
@@ -150,4 +159,32 @@ function getXPositions(numberOfTasks: number, parentx: number, radius: number) {
         xPositions.push(currentPosition - halfwayPoint + parentx)
     }
     return xPositions
+}
+
+
+function getEdges(transformedEpic: Task[]){
+    const edges:Edge[] = []
+
+    transformedEpic.forEach(t =>{
+        if(t.centerx !== undefined && t.centery !== undefined){
+            const x1 = t.centerx + 400
+            const y1 = t.centery
+            t.dependencies.forEach(e => {
+                if(e.task.centerx !== undefined && e.task.centery !== undefined){
+                    const x2 = e.task.centerx +400
+                    const y2 = e.task.centery
+        
+                    e.originx = x1
+                    e.originy = y1
+                    e.destx = x2
+                    e.desty = y2
+                    edges.push(e)
+                }
+    
+            })
+        }
+
+
+    })
+    return edges
 }
