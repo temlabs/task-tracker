@@ -5,7 +5,8 @@ const organiseWardrobe: Task = {
     id: 4,
     title: 'Organise wardrobe',
     status: 'Not started',
-    dependencies: []
+    dependencies: [],
+    parents:[3,5]
 
 }
 
@@ -20,7 +21,8 @@ const putShoesAway: Task = {
             priority: 2
 
         }
-    ]
+    ],
+    parents:[1]
 }
 
 const hoover: Task = {
@@ -31,7 +33,8 @@ const hoover: Task = {
     dependencies: [{
         task: putShoesAway,
         priority: 4
-    }]
+    }],
+    parents:[6]
 }
 
 const putClothesInWardrobe: Task = {
@@ -44,7 +47,8 @@ const putClothesInWardrobe: Task = {
             task: organiseWardrobe,
             priority: 3
         }
-    ]
+    ],
+    parents:[2]
 }
 
 const makeBed: Task = {
@@ -57,7 +61,8 @@ const makeBed: Task = {
             task: putClothesInWardrobe,
             priority: 4
         }
-    ]
+    ],
+    parents: [6]
 }
 
 const cleanRoom: Task = {
@@ -74,7 +79,8 @@ const cleanRoom: Task = {
             task: hoover,
             priority: 3
         }
-    ]
+    ],
+    parents: []
 }
 
 const cleanRoomEpic = [cleanRoom, makeBed, hoover, putClothesInWardrobe, putShoesAway, organiseWardrobe]

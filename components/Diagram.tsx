@@ -1,5 +1,5 @@
 import { Task, Edge } from "../utils/interfaces"
-import { isDependency } from "../utils/helpers"
+
 
 
 interface DiagramProps {
@@ -15,18 +15,16 @@ function instanceOfEdge(object: any): object is Edge {
 
 export default function Diagram({ epic, radius, verticalSeparation }: DiagramProps): JSX.Element {
 
-    const transformedTasks: (Task | Edge)[] = transformTasksToSVG(epic, verticalSeparation, radius)
+    const transformedTasks = transformTasksToSVG(epic, verticalSeparation, radius)
+
     return (
         <>
             <svg width="800" height="800">
                 {
                     transformedTasks.map((t, i) => {
-                        if (instanceOfEdge(t)) {
-                            return <line key={i} x1={t.originx} y1={t.originy} x2={t.destx} y2={t.desty} stroke="black" />
-                        }
-                        else {
-                            return <circle key={i} cx={t.centerx} cy={t.centery} r={radius} />
-                        }
+
+                        return <circle id={t.title} key={t.title} cx={t.centerx !== undefined ? t.centerx + 400 : 200} cy={t.centery} r={radius} />
+
                     })
                 }
             </svg>
@@ -36,15 +34,35 @@ export default function Diagram({ epic, radius, verticalSeparation }: DiagramPro
 
 
 
-function transformTasksToSVG(epic: Task[], verticalSeparation: number, radius: number): (Task | Edge)[] {
-    const tasksWithCoordinates: (Task | Edge)[] = []
+function transformTasksToSVG(epic: Task[], verticalSeparation: number, radius: number): Task[] {
+    const tasksWithCoordinates: Task[] = []
 
-    // find head
-    epic.forEach( t => {
-        updateCoordinates(t,epic,verticalSeparation,radius)
-        tasksWithCoordinates.push(t)
-        t.dependencies.forEach(e => tasksWithCoordinates.push(e))
-    })
+    const queue: Task[] = [...epic]
+    let iteration = 0
+    // for each child of head, getCoordinatesForChildren
+    while (queue.length > 0 && iteration < 100) {
+        const currentTask = queue[0]
+
+        if (currentTask.head) {
+            currentTask.centerx = 0
+            currentTask.centery = 20
+        }
+        const hasCoords: boolean = currentTask.centerx !== undefined && currentTask.centery !== undefined
+        if (!hasCoords) {
+            const sendToBack = queue.shift()
+            if (sendToBack) {
+                queue.push(sendToBack)
+            }
+        }
+        else {
+            getCoordinatesForChildren(currentTask, epic, verticalSeparation, radius)
+            const taskWithCoordinates = queue.shift()
+            if (taskWithCoordinates) {
+                tasksWithCoordinates.push(taskWithCoordinates)
+            }
+        }
+        iteration++
+    }
 
     return tasksWithCoordinates
 }
@@ -56,118 +74,80 @@ function transformTasksToSVG(epic: Task[], verticalSeparation: number, radius: n
  * @param verticalSeparation 
  * @param radius 
  */
-function updateCoordinates(task: Task, epic: Task[], verticalSeparation: number, radius: number) {
-    // It is a necessary requirement that epic is organised from head to last child for this to work.
-    // This is because if it isn't a head node, it will use the destination co-ordinates of the parent edge as center point.
-    // It is assumed that these edges will already have destinations, which means this function should be called on the parents of this task before this task is processed.
-    const headCoords = { x: 500, y: 80 }
-    console.log(task.title)
-    // give the task node center co-ords. give default head co-ords if head. otherwise, give the dest coords of the edge connecting to it
-    if (task.head === true) {
-        task.centerx = headCoords.x
-        task.centery = headCoords.y
-    } else {
-        // find the first edge that conects to the tasks and use its dest co-rords as center co-ords
-        const parentEdges = epic.filter(t => isDependency(t, task)).map(p => p.dependencies.find(e => e.task.id === task.id))
-        if (parentEdges) {
-            task.centerx = parentEdges[0]?.destx
-            task.centery = parentEdges[0]?.desty
-        }
-    }
+function getCoordinatesForChildren(task: Task, epic: Task[], verticalSeparation: number, radius: number) {
+    const hasChildren = task.dependencies.length > 0
+    const numberOfChildren = task.dependencies.length
+    // if task has co-ordinates, we can provide co-ordinates for its children
+    if (task.centerx !== undefined && task.centery !== undefined && hasChildren) {
+        const xPositions = getXPositions(numberOfChildren, task.centerx, radius)
+        task.dependencies.forEach((e, i) => {
+            const childTask = e.task
+            const hasPosition = childTask.centerx !== undefined && childTask.centery !== undefined
+            if (!hasPosition && xPositions) {
+                childTask.centerx = xPositions[i]
+                childTask.centery = task.centery! + verticalSeparation
+            }
+            else if (hasPosition && childTask.parents.length > 1) { // has another parent that has updated it
+
+                const numberOfParents = childTask.parents.length
+                const parents = childTask.parents.map(id => epic.find(t => t.id === id))
+                const allParentsHaveCoordinates = parents.every(t => t && t.centerx !== undefined && t.centery !== undefined)
+
+                // if all of the child's parents have co-ords, it can now be properly positioned.
+                // otherwise, leave the job for the last parent
+                if (allParentsHaveCoordinates) {
+
+                    const parentsx = parents.map(t => t?.centerx)
+                    const sumOfParentsx = parentsx.reduce((prev, curr) => {
+                        if (prev !==undefined && curr !== undefined) {
+                            return prev + curr
+                        }
+                        return 0
+                    }, 0)
+                    if (sumOfParentsx !== undefined) {
+                        childTask.centerx = sumOfParentsx / numberOfParents
+                    }
+
+                    const parentsy = parents.map(t => t?.centery)
+                    const lowestParent = parentsy.reduce((prev, curr) => {
+                        if (curr && prev && curr > prev) {
+                            return curr
+                        }
+                    }, parentsy[0]) // higher y value is lower on the canvas
+
+                    if (lowestParent) {
+                        childTask.centery = lowestParent + verticalSeparation
+                    }
+                    getCoordinatesForChildren(childTask, epic, verticalSeparation, radius)
+                }
+            }
 
 
-    // give each edge an origin at the centre, then destinations.
-    
-    const numberOfEdges = task.dependencies.length
-    if(numberOfEdges > 0){
-        const angleRange = getAngleRange(verticalSeparation, numberOfEdges, radius)
-        const edgeAngles = getEdgeAngles(numberOfEdges, angleRange)
-    
-        for (let i = 0; i < task.dependencies.length; i++) {
-            const e = task.dependencies[i]
-            e.originx = task.centerx
-            e.originy = task.centery
-    
-            const edgeAngle = edgeAngles[i]
-            const edgeLength = getEdgeLength(edgeAngle, verticalSeparation)
-            const destinationCoords = getEdgeDestination(edgeAngle, edgeLength, e.originx!, e.originy!)
-    
-            e.destx = destinationCoords.destx
-            e.desty = destinationCoords.desty
-            e.length = edgeLength
-
-        }
+        })
     }
 }
 
-/**
- * Divides the angle range proportionately such that each edge has an angle (wrt to horizon) from which it travels to the next node
- * @param numberOfEdges 
- * @param angleRange 
- * @returns 
- */
-function getEdgeAngles(numberOfEdges: number, angleRange: number): number[] {
-    const edgeAngles: number[] = []
-    if(numberOfEdges===1){
-        return [90]
+
+
+
+
+function getXPositions(numberOfTasks: number, parentx: number, radius: number) {
+    if (numberOfTasks === 0) {
+        console.log('bad call')
+        return
     }
-    const startingAngle = (180 - angleRange) / 2
-    const endAngle = (180 + angleRange) / 2
-    const increment = angleRange / (numberOfEdges -1)
-    let currentAngle = startingAngle
-    let multiple = 0
-    while (currentAngle < endAngle) {
-        currentAngle = startingAngle + (multiple * increment)
-        console.log({currentAngle, increment, multiple})
-        edgeAngles.push(currentAngle)
-        multiple++
+    if (numberOfTasks === 1) {
+        return [parentx]
     }
-    console.log({edgeAngles, startingAngle, endAngle})
-    return edgeAngles
-}
-
-
-/**
- * Calculates the length of the edge so that it meets the vertical separation
- * @param edgeAngle 
- * @param verticlaDistance 
- * @returns 
- */
-function getEdgeLength(edgeAngle: number, verticlaDistance: number): number {
-    const angleWithVertical = Math.abs(90 - edgeAngle)
-    const edgeLength = verticlaDistance / Math.cos(angleWithVertical * (Math.PI / 180))
-    return Math.abs(edgeLength)
-}
-
-/**
- * Given the angle at which the edge leaves the horizontal, and its length, the destination co-ordinates can be calculated.
- * @param edgeAngle 
- * @param edgeLength 
- * @param originx 
- * @param originy 
- * @returns 
- */
-function getEdgeDestination(edgeAngle: number, edgeLength: number, originx: number, originy: number) {
-
-    const angleWithVertical = Math.abs(90 - edgeAngle)
-    const x = (Math.sin(angleWithVertical * (Math.PI / 180)) * edgeLength)
-    const desty = originy + Math.abs((Math.cos(angleWithVertical * (Math.PI / 180)) * edgeLength))
-    const destx = edgeAngle < 90 ? originx - x : originx + x
-
-    return { destx: destx, desty: desty }
-
-}
-
-/**
- * Uses the width of the children nodes to calculate an angle that given the vertical separation will ensure no overlap between nodes.
- * @param verticalSeparation 
- * @param numberOfEdges 
- * @param r 
- * @returns 
- */
-function getAngleRange(verticalSeparation: number, numberOfEdges: number, r: number) {
-    // const baseWidth = (2*numberOfEdges - 2)*r
-    const baseWidth = (numberOfEdges + 1) * (r+10)
-    const halfAngleRange = Math.atan((baseWidth / 2) / verticalSeparation) * (180 / Math.PI)
-    return halfAngleRange * 2
+    const margin = 50
+    const lineLength = (numberOfTasks) * (radius + margin)
+    const halfwayPoint = lineLength / 2
+    const xPositions: number[] = []
+    const increment = lineLength / (numberOfTasks - 1)
+    let currentPosition = 0
+    for (let i = 0; i < numberOfTasks; i++) {
+        currentPosition = (i * increment)
+        xPositions.push(currentPosition - halfwayPoint + parentx)
+    }
+    return xPositions
 }

@@ -47,7 +47,7 @@ export default function Epic(): JSX.Element {
                     <line x1="50" y1="50" x2="50" y2="200" stroke-width="4" stroke="black" />
                     Sorry, your browser does not support inline SVG.
                 </svg> */}
-                <Diagram epic={cleanRoomEpic} verticalSeparation={110} radius={15}/>
+                <Diagram epic={hostDinnerEpic} verticalSeparation={110} radius={15}/>
             </section>
 
 

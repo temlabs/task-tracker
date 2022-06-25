@@ -6,7 +6,8 @@ const invitePeople: Task = {
     id: 7,
     title: 'Invite people',
     status: 'Not started',
-    dependencies: []
+    dependencies: [],
+    parents:[6]
 
 }
 
@@ -20,7 +21,8 @@ const decideBudget: Task = {
             task: invitePeople,
             priority: 4
         }
-    ]
+    ],
+    parents:[4]
 }
 
 const getMealSuggestions: Task = {
@@ -28,7 +30,8 @@ const getMealSuggestions: Task = {
     id: 8,
     title: 'Get meal suggestions',
     status: 'Not started',
-    dependencies: []
+    dependencies: [],
+    parents:[5]
 }
 
 const decideMenu: Task = {
@@ -41,7 +44,8 @@ const decideMenu: Task = {
             task: getMealSuggestions,
             priority: 3
         }
-    ]
+    ],
+    parents:[4]
 }
 
 const buyIngredients: Task = {
@@ -58,7 +62,8 @@ const buyIngredients: Task = {
             task: decideBudget,
             priority: 3
         }
-    ]
+    ],
+    parents:[3,2]
 }
 
 const prepareFood: Task = {
@@ -71,7 +76,8 @@ const prepareFood: Task = {
             task: buyIngredients,
             priority: 4
         }
-    ]
+    ],
+    parents:[0]
 }
 
 
@@ -80,7 +86,11 @@ const getBoardGames: Task = {
     id: 2,
     title: 'Get board games',
     status: 'Not started',
-    dependencies: []
+    dependencies: [        {
+        task: buyIngredients,
+        priority: 4
+    }],
+    parents:[0]
 }
 
 const tidyUp: Task = {
@@ -88,7 +98,8 @@ const tidyUp: Task = {
     id: 1,
     title: 'Tidy up',
     status: 'Not started',
-    dependencies: []
+    dependencies: [],
+    parents:[0]
 }
 
 const hostDinner: Task = {
@@ -109,7 +120,8 @@ const hostDinner: Task = {
             task: tidyUp,
             priority: 3
         },
-    ]
+    ],
+    parents:[]
 }
 
 
