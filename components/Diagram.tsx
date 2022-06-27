@@ -1,3 +1,4 @@
+import { toNamespacedPath } from "path";
 import { Task, Edge } from "../utils/interfaces"
 
 
@@ -13,26 +14,47 @@ function instanceOfEdge(object: any): object is Edge {
     return 'task' in object;
 }
 
+
+const priorityToColour = {
+    1: "green",
+    2: "yellow",
+    3: "orange",
+    4:"red"
+}
+
 export default function Diagram({ epic, radius, verticalSeparation }: DiagramProps): JSX.Element {
 
     const transformedTasks = transformTasksToSVG(epic, verticalSeparation, radius)
-    const transformedEdges = getEdges(transformedTasks)
+    const transformedEdges = getEdges(transformedTasks, verticalSeparation, radius)
 
 
     return (
         <>
             <svg width="800" height="800">
-                {
-                    transformedTasks.map((t, i) => {
 
-                        return <circle id={t.title} key={t.title} cx={t.centerx !== undefined ? t.centerx + 400 : 200} cy={t.centery} r={radius} />
+                {/* <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5"
+                    markerWidth="6" markerHeight="6"
+                    orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" />
+                </marker> */}
+
+
+                {
+                    transformedEdges.map((e,i) => {
+
+                        return <line key={i} x1={e.originx! + 400} y1={e.originy} x2={e.destx! + 400} y2={e.desty} stroke={priorityToColour[e.priority]} markerEnd="url(#arrow)" strokeWidth="1.5" ></line>
 
                     })
                 }
-                {
-                    transformedEdges.map(e => {
 
-                        return <line x1={e.originx} y1={e.originy} x2={e.destx} y2={e.desty} stroke="black"></line>
+
+                {
+                    transformedTasks.map((t, i) => {
+
+                        return <g key={t.title} >
+                            <circle className=" cursor-pointer" cx={t.centerx! + 400} cy={t.centery} r={radius} fill="white" stroke="black" strokeWidth="1.5" />
+                            <text x={t.centerx! + 400} y={t.centery! + radius + 20} className=" text-xs">{t.title}</text>
+                        </g>
 
                     })
                 }
@@ -108,7 +130,7 @@ function getCoordinatesForChildren(task: Task, epic: Task[], verticalSeparation:
 
                     const parentsx = parents.map(t => t?.centerx)
                     const sumOfParentsx = parentsx.reduce((prev, curr) => {
-                        if (prev !==undefined && curr !== undefined) {
+                        if (prev !== undefined && curr !== undefined) {
                             return prev + curr
                         }
                         return 0
@@ -148,7 +170,7 @@ function getXPositions(numberOfTasks: number, parentx: number, radius: number) {
     if (numberOfTasks === 1) {
         return [parentx]
     }
-    const margin = 50
+    const margin = 100
     const lineLength = (numberOfTasks) * (radius + margin)
     const halfwayPoint = lineLength / 2
     const xPositions: number[] = []
@@ -162,25 +184,37 @@ function getXPositions(numberOfTasks: number, parentx: number, radius: number) {
 }
 
 
-function getEdges(transformedEpic: Task[]){
-    const edges:Edge[] = []
+function getEdges(transformedEpic: Task[], verticalSeparation:number, radius:number) {
+    const edges: Edge[] = []
 
-    transformedEpic.forEach(t =>{
-        if(t.centerx !== undefined && t.centery !== undefined){
-            const x1 = t.centerx + 400
-            const y1 = t.centery
+    transformedEpic.forEach(t => {
+        if (t.centerx !== undefined && t.centery !== undefined) {
+            const x2 = t.centerx
+            const y2 = t.centery
+
+            
             t.dependencies.forEach(e => {
-                if(e.task.centerx !== undefined && e.task.centery !== undefined){
-                    const x2 = e.task.centerx +400
-                    const y2 = e.task.centery
-        
-                    e.originx = x1
-                    e.originy = y1
-                    e.destx = x2
-                    e.desty = y2
+                if (e.task.centerx !== undefined && e.task.centery !== undefined) {
+
+                    const x1 = e.task.centerx
+                    const y1 = e.task.centery
+
+                    // work out angle to the destination node (parent node)
+                    const xDidfference = Math.abs(x1-x2)
+                    const angleToDestNode = Math.atan(xDidfference / verticalSeparation)
+                    // now we can work out the x and y adjustment for the line so that it touches the edge of the node
+                    let xAdjustment = x1 > x2 ?  Math.cos(angleToDestNode)*radius : -Math.cos(angleToDestNode)*radius
+                    xAdjustment = x1 === x2 ? 0 : xAdjustment
+                    let yAdjustment = Math.sin(angleToDestNode)*radius
+                    yAdjustment = x1 === x2 ? radius : yAdjustment
+                    
+                    e.originx = x1 - xAdjustment
+                    e.originy = y1 - yAdjustment
+                    e.destx = x2 + xAdjustment
+                    e.desty = y2 + yAdjustment
                     edges.push(e)
                 }
-    
+
             })
         }
 
