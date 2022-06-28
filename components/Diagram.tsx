@@ -30,7 +30,7 @@ export default function Diagram({ epic, radius, verticalSeparation }: DiagramPro
 
     return (
         <>
-            <svg width="800" height="800">
+            <svg width="800" height="800" className=" bg-gray-300">
 
                 {/* <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5"
                     markerWidth="6" markerHeight="6"
@@ -170,8 +170,8 @@ function getXPositions(numberOfTasks: number, parentx: number, radius: number) {
     if (numberOfTasks === 1) {
         return [parentx]
     }
-    const margin = 100
-    const lineLength = (numberOfTasks) * (radius + margin)
+    const margin = 50
+    const lineLength = (2*numberOfTasks - 2) * (radius + margin)
     const halfwayPoint = lineLength / 2
     const xPositions: number[] = []
     const increment = lineLength / (numberOfTasks - 1)
@@ -203,14 +203,14 @@ function getEdges(transformedEpic: Task[], verticalSeparation:number, radius:num
                     const xDidfference = Math.abs(x1-x2)
                     const angleToDestNode = Math.atan(xDidfference / verticalSeparation)
                     // now we can work out the x and y adjustment for the line so that it touches the edge of the node
-                    let xAdjustment = x1 > x2 ?  Math.cos(angleToDestNode)*radius : -Math.cos(angleToDestNode)*radius
+                    let xAdjustment = x1 > x2 ?  Math.cos(angleToDestNode)*radius - radius : -Math.cos(angleToDestNode)*radius + radius
                     xAdjustment = x1 === x2 ? 0 : xAdjustment
-                    let yAdjustment = Math.sin(angleToDestNode)*radius
+                    let yAdjustment = Math.sin(angleToDestNode)*radius - radius
                     yAdjustment = x1 === x2 ? radius : yAdjustment
                     
                     e.originx = x1 - xAdjustment
                     e.originy = y1 - yAdjustment
-                    e.destx = x2 + xAdjustment
+                    e.destx = x2 + xAdjustment 
                     e.desty = y2 + yAdjustment
                     edges.push(e)
                 }

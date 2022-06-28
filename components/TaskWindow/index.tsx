@@ -2,7 +2,8 @@ import { RefObject, useEffect, useRef, useState } from "react"
 import { Task } from "../../utils/interfaces"
 
 interface TaskWidowProps {
-    windowRef: RefObject<HTMLDivElement>
+    windowRef: RefObject<HTMLDivElement>;
+    setWindowShowing: (windowShowing:boolean) => void
 }
 
 interface TaskWindowState extends Task {
@@ -12,16 +13,16 @@ interface TaskWindowState extends Task {
 
 
 
-export default function TaskWindow({ windowRef }: TaskWidowProps): JSX.Element {
+export default function TaskWindow({ windowRef, setWindowShowing }: TaskWidowProps): JSX.Element {
 
     return (
 
         <div ref={windowRef} className="bg-white absolute  left-[50%] top-[50vh] translate-x-[-50%] translate-y-[-50%] w-[70vw] h-[80vh] m-auto rounded-2xl shadow-2xl p-10 flex flex-col">
             <div className="flex justify-end">
-                <p>Cancel</p>
+                <p className=" underline text-sky-600 cursor-pointer" onClick={() => setWindowShowing(false)}>Cancel</p>
 
             </div>
-            <input placeholder="Enter a title for your task" className="text-4xl outline-none w-auto p-2 " />
+            <input placeholder="Enter a title for your task" className="text-4xl outline-none w-auto p-2 focus:outline-sky-600 rounded-sm" />
             <textarea placeholder="Provide a description" className=" my-2 resize-none outline-none h-24 overflow-hidden p-2 focus:outline-sky-600 rounded-sm " maxLength={240} />
             <hr className="my-4"></hr>
             <div className="flex my-2 px-2 justify-between">

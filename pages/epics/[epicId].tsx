@@ -4,6 +4,7 @@ import Diagram from "../../components/Diagram"
 import TaskWindow from "../../components/TaskWindow"
 import hostDinnerEpic from "../../data/hostDinnerEpic"
 import cleanRoomEpic from "../../data/cleanRoomEpic"
+import Button from "../../components/Button"
 
 export default function Epic(): JSX.Element {
     const router = useRouter()
@@ -29,24 +30,16 @@ export default function Epic(): JSX.Element {
 
     return (
         <>
-            <section className="flex flex-col w-auto relative">
-                <h1 onClick={() => setWindowShowing(true)}>
-                    Create the first task for {epicId}
-                </h1>
-                <div>
-                    some other stuff that should be greyed out
-                </div>
+            <section className="flex flex-col items-start w-auto relative p-5">
+                <Button onClick={() => setWindowShowing(true)}>
+                    New Task
+                </Button>
 
                 {windowShowing &&
-                    <TaskWindow windowRef={popupRef} />
+                    <TaskWindow windowRef={popupRef} setWindowShowing={setWindowShowing} />
                 }
             </section>
             <section>
-                {/* <svg width="100%" height="800">
-                    <circle className=" cursor-pointer" cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
-                    <line x1="50" y1="50" x2="50" y2="200" stroke-width="4" stroke="black" />
-                    Sorry, your browser does not support inline SVG.
-                </svg> */}
                 <Diagram epic={hostDinnerEpic} verticalSeparation={110} radius={15}/>
             </section>
 
