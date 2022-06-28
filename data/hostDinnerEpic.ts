@@ -125,6 +125,7 @@ const hostDinner: Task = {
 }
 
 
-const hostDinnerEpic = [hostDinner, tidyUp, getBoardGames, prepareFood, buyIngredients, decideMenu, getMealSuggestions, decideBudget, invitePeople]
+//const hostDinnerEpic = [hostDinner, tidyUp, getBoardGames, prepareFood, buyIngredients, decideMenu, getMealSuggestions, decideBudget, invitePeople]
+const hostDinnerEpic = [ tidyUp,  decideBudget,prepareFood,hostDinner, buyIngredients, decideMenu, getMealSuggestions,getBoardGames,  invitePeople]
 
 export default hostDinnerEpic

@@ -10,11 +10,11 @@ export default function Sidebar(): JSX.Element {
     const initialEpicNames: EpicName[] = [
         {
             displayName: "Test Epic",
-            epicId: "test"
+            epicId: "example1"
         },
         {
             displayName: "Other test epic",
-            epicId: "othertest"
+            epicId: "example2"
         }
     ]
 
@@ -41,24 +41,24 @@ export default function Sidebar(): JSX.Element {
         <>
             <div className="flex flex-col bg-white p-0  text-gray shadow-xl w-2/12 min-h-full h-full fixed">
                 <Link href="/">
-                    <span className="flex items-center px-3 cursor-pointer h-10 hover:bg-gray-100 hover:px-6 ">
+                    <span className=" text-sm flex items-center px-3 cursor-pointer h-10 hover:bg-gray-100 hover:px-6 ">
                         <p>Home</p>
                     </span>
                 </Link>
                 <Link href={"/"}>
-                    <span className=" flex items-center px-3 cursor-pointer h-10 hover:bg-gray-100 hover:px-6 ">
+                    <span className=" text-sm flex items-center px-3 cursor-pointer h-10 hover:bg-gray-100 hover:px-6 ">
                         <p>About</p>
                     </span>
                 </Link>
 
-                <span onClick={() => setEpicNames(p => [...p, newEpic])} className=" flex items-center px-3 cursor-pointer h-10 bg-rose-800 text-white hover:px-6 ">
+                <span onClick={() => setEpicNames(p => [...p, newEpic])} className=" text-sm flex items-center px-3 cursor-pointer h-10 bg-rose-800 text-white hover:px-6 ">
                     <p>Create new epic</p>
                 </span>
 
                 {
                     epicNames.map(en =>
-                        <Link href={`/epics/${en.epicId}`}>
-                            <div onContextMenu={(e) => showMenu(e)} contextMenu="mymenu" className=" flex items-center px-3 cursor-pointer h-10 hover:bg-gray-100 hover:px-6 transition-all ">
+                        <Link key={en.epicId} href={`/epics/${en.epicId}`}>
+                            <div onContextMenu={(e) => showMenu(e)} className=" text-sm flex items-center px-3 cursor-pointer h-10 hover:bg-gray-100 hover:px-6 transition-all ">
                                 <p>{en.displayName}</p>
                             </div>
                         </Link>

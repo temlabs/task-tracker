@@ -17,7 +17,7 @@ export default function TaskWindow({ windowRef, setWindowShowing }: TaskWidowPro
 
     return (
 
-        <div ref={windowRef} className="bg-white absolute  left-[50%] top-[50vh] translate-x-[-50%] translate-y-[-50%] w-[70vw] h-[80vh] m-auto rounded-2xl shadow-2xl p-10 flex flex-col">
+        <div ref={windowRef} className="bg-white absolute  left-[50%] top-[50vh] translate-x-[-50%] translate-y-[-50%] w-[70vw] h-[80vh] m-auto rounded-2xl shadow-2xl p-10 flex flex-col overflow-y-auto">
             <div className="flex justify-end">
                 <p className=" underline text-sky-600 cursor-pointer" onClick={() => setWindowShowing(false)}>Cancel</p>
 
